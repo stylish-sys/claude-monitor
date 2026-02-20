@@ -14,7 +14,7 @@
 ## 설치
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/stylish-sys/claude-monitor.git
 cd claude-monitor
 npm install
 ```
