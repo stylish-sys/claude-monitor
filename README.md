@@ -1,33 +1,33 @@
 # Claude Multi-Agent Monitor
 
-3개의 Claude Code CLI 인스턴스를 한 화면에서 실시간 모니터링하는 대시보드.
+Real-time monitoring dashboard for multiple Claude Code CLI instances on a single screen.
 
-## 기능
+![Dashboard](https://img.shields.io/badge/status-active-brightgreen) ![Node](https://img.shields.io/badge/node-18%2B-blue) ![License](https://img.shields.io/badge/license-MIT-green)
 
-- **4컬럼 레이아웃**: TASK | RESULT | USAGE | HISTORY
-- **실시간 상태**: WORKING / IDLE / COMPLETE / OFFLINE
-- **사용량 게이지**: 5시간 윈도우 / 주간 사용량 + 남은량
-- **히스토리**: 과거 작업 + 답변 요약
-- **서브에이전트 추적**: executor, explore 등 표시
-- **서버 자동 재시작**: crash 시 2초 후 복구
+## Features
 
-## 설치
+- **4-Column Layout**: TASK | RESULT | USAGE | HISTORY side by side
+- **Real-time Status**: WORKING / IDLE / COMPLETE / OFFLINE per agent
+- **Usage Gauges**: 5-hour window & weekly usage with remaining quota
+- **History**: Past tasks with answer summaries
+- **Subagent Tracking**: Shows executor, explore, and other delegated agents
+- **Auto-restart**: Server recovers automatically after crash (2s delay)
+- **Secure**: Account credentials never exposed via API or frontend
+
+## Quick Start
 
 ```bash
 git clone https://github.com/stylish-sys/claude-monitor.git
 cd claude-monitor
 npm install
-```
-
-## 설정
-
-### 1. 에이전트 설정
-
-```bash
 cp config/agents.example.json config/agents.json
 ```
 
-`config/agents.json`을 자신의 환경에 맞게 수정:
+## Setup
+
+### 1. Configure Agents
+
+Edit `config/agents.json` with your environment:
 
 ```json
 {
@@ -47,23 +47,27 @@ cp config/agents.example.json config/agents.json
 }
 ```
 
-- `id`: 에이전트 고유 ID (hook에서 사용)
-- `configDir`: Claude Code 설정 디렉토리 경로
-- `plan`: 플랜 타입 (pro/max)
-- `msgsLimit5h` / `msgsLimitWeek`: 메시지 한도 (게이지 표시용)
+| Field | Description |
+|-------|-------------|
+| `id` | Unique agent ID (used in hooks) |
+| `configDir` | Claude Code config directory path (e.g. `~/.claude-1`) |
+| `plan` | Plan type: `pro` or `max` |
+| `msgsLimit5h` | Message limit per 5-hour window (for gauge display) |
+| `msgsLimitWeek` | Weekly message limit (for gauge display) |
+| `color` | Agent color in dashboard (hex) |
 
-### 2. Hook 등록
+### 2. Register Hooks
 
-각 Claude Code 인스턴스의 settings.json에 모니터링 hook을 추가합니다.
+Add monitoring hooks to each Claude Code instance's `settings.json`.
 
-**자동 등록:**
+**Automatic (recommended):**
 ```bash
 node scripts/inject-hooks.mjs
 ```
 
-**수동 등록** (settings.json에 직접 추가):
+**Manual** (add to each hook event in settings.json):
 
-각 hook 이벤트(SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, PostToolUseFailure, Stop, SubagentStart, SubagentStop)에 아래 형식으로 추가:
+Hook events to register: `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `Stop`, `SubagentStart`, `SubagentStop`
 
 ```json
 {
@@ -76,58 +80,77 @@ node scripts/inject-hooks.mjs
 }
 ```
 
-- `MONITOR_AGENT_ID`: agents.json의 id와 일치시킬 것
-- `MONITOR_PORT`: 서버 포트 (기본 7777)
+- `MONITOR_AGENT_ID` must match the `id` in agents.json
+- `MONITOR_PORT` defaults to 7777
 
-### 3. 서버 시작
+### 3. Start Server
 
 ```bash
-# 일반 시작
+# Standard
 node server/index.mjs
 
-# 자동 재시작 (권장)
+# With auto-restart (recommended)
 bash start.sh
 ```
 
-http://127.0.0.1:7777 에서 대시보드 확인.
+Open http://127.0.0.1:7777
 
-## 구조
+## Architecture
+
+```
+Claude-1 (configDir: ~/.claude-1) ──hooks──> HTTP POST ──>
+Claude-2 (configDir: ~/.claude-2) ──hooks──> HTTP POST ──> Dashboard Server ──WebSocket──> Browser
+Claude-3 (configDir: ~/.claude-3) ──hooks──> HTTP POST ──>   (port 7777)
+```
+
+Each Claude Code session's hook events are captured and forwarded to a central server via HTTP POST. The server stores events in SQLite and broadcasts to the browser via WebSocket.
+
+## Project Structure
 
 ```
 claude-monitor/
 ├── config/
-│   ├── agents.json          # 에이전트 설정 (gitignore)
-│   └── agents.example.json  # 템플릿
+│   ├── agents.json            # Your agent config (gitignored)
+│   └── agents.example.json    # Template
 ├── hooks/
-│   └── monitor-forwarder.mjs # Hook → 서버 전송
+│   └── monitor-forwarder.mjs  # Hook stdin → HTTP POST forwarder
 ├── scripts/
-│   └── inject-hooks.mjs     # Hook 자동 등록
+│   └── inject-hooks.mjs       # Auto-inject hooks into settings.json
 ├── server/
-│   ├── index.mjs            # Express + Socket.io
-│   ├── db.mjs               # SQLite
-│   └── routes.mjs           # REST API
+│   ├── index.mjs              # Express + Socket.io server
+│   ├── db.mjs                 # SQLite schema + queries
+│   └── routes.mjs             # REST API routes
 ├── public/
-│   ├── index.html
-│   ├── style.css
-│   └── app.js
-├── start.sh                 # 자동 재시작 래퍼
-└── data/                    # SQLite DB (자동생성)
+│   ├── index.html             # Dashboard HTML
+│   ├── style.css              # Dark theme styles
+│   └── app.js                 # Socket.io client + DOM
+├── start.sh                   # Auto-restart wrapper
+├── setup.sh                   # tmux session manager
+└── data/                      # SQLite DB (auto-created)
 ```
-
-## 요구사항
-
-- Node.js 18+
-- Claude Code CLI (각 인스턴스별 별도 설정 디렉토리)
 
 ## API
 
-| Endpoint | 설명 |
-|----------|------|
-| `POST /api/events` | Hook 이벤트 수신 |
-| `GET /api/agents` | 에이전트 상태 |
-| `GET /api/usage` | 사용량 통계 (5h/weekly) |
-| `GET /api/config` | 에이전트 설정 (민감정보 제외) |
-| `GET /api/timeline` | 이벤트 타임라인 |
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/events` | POST | Receive hook events |
+| `/api/agents` | GET | Agent statuses |
+| `/api/usage` | GET | Usage stats (5h/weekly) |
+| `/api/config` | GET | Agent config (sensitive fields filtered) |
+| `/api/timeline` | GET | Event timeline |
+| `/api/tasks` | GET | Task list |
+
+## Requirements
+
+- Node.js 18+
+- Claude Code CLI with separate config directories per instance
+
+## Tech Stack
+
+- **Server**: Express 5 + Socket.io 4
+- **Database**: better-sqlite3
+- **Frontend**: Vanilla HTML/CSS/JS (no build step)
+- **Dependencies**: Only 3 packages (express, better-sqlite3, socket.io)
 
 ## License
 
