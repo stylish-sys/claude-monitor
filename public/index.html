@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Monitor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <h1><span>CLAUDE</span> MONITOR</h1>
+    <div class="connection-status">
+      <div class="connection-dot" id="connDot"></div>
+      <span id="connLabel">Connecting...</span>
+    </div>
+  </header>
+
+  <main class="agents-list" id="agentsList"></main>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <button class="modal-close" id="modalClose">&times;</button>
+      <h3 id="modalTitle">Detail</h3>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

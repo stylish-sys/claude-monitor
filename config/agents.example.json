@@ -1,0 +1,37 @@
+{
+  "agents": [
+    {
+      "id": "agent-1",
+      "name": "Claude-1",
+      "account": "your-email-1@example.com",
+      "configDir": "~/.claude-1",
+      "color": "#6366f1",
+      "tmuxSession": "agent-1",
+      "plan": "max",
+      "msgsLimit5h": 200,
+      "msgsLimitWeek": 2000
+    },
+    {
+      "id": "agent-2",
+      "name": "Claude-2",
+      "account": "your-email-2@example.com",
+      "configDir": "~/.claude-2",
+      "color": "#22c55e",
+      "tmuxSession": "agent-2",
+      "plan": "max",
+      "msgsLimit5h": 200,
+      "msgsLimitWeek": 2000
+    },
+    {
+      "id": "agent-3",
+      "name": "Claude-3",
+      "account": "your-email-3@example.com",
+      "configDir": "~/.claude-3",
+      "color": "#f59e0b",
+      "tmuxSession": "agent-3",
+      "plan": "max",
+      "msgsLimit5h": 200,
+      "msgsLimitWeek": 2000
+    }
+  ]
+}
